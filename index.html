@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="fr" dir="ltr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>BID ELBARAKA - Vente</title>
+<style>
+:root{--p:#126b45;--bg:#f4f7f5;--card:#fff;--text:#17211c;--muted:#6d7771;--danger:#c62828}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text);padding-bottom:82px}
+header{background:var(--p);color:#fff;padding:18px 16px 14px;position:sticky;top:0;z-index:5}header h1{font-size:20px;margin:0}header small{opacity:.85}
+main{max-width:720px;margin:auto;padding:14px}.page{display:none}.page.active{display:block}
+.card{background:var(--card);border-radius:16px;padding:14px;margin-bottom:12px;box-shadow:0 2px 12px #0000000d}
+h2{font-size:19px;margin:4px 0 14px}label{font-size:12px;color:var(--muted);display:block;margin:9px 0 5px}
+input{width:100%;padding:13px;border:1px solid #d9dfdb;border-radius:11px;font-size:16px;background:#fff}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.btn{border:0;border-radius:11px;padding:13px 14px;font-weight:bold;font-size:14px;cursor:pointer}
+.primary{background:var(--p);color:#fff}.secondary{background:#e7efe9;color:var(--p)}.danger{background:#ffebee;color:var(--danger)}
+.search{display:flex;gap:8px}.search input{flex:1}.search .btn{white-space:nowrap}
+.item{border-bottom:1px solid #eee;padding:11px 0}.item:last-child{border:0}.item-top{display:flex;justify-content:space-between;gap:8px;font-weight:bold}
+.meta{font-size:13px;color:var(--muted);margin-top:5px}.qty{display:flex;align-items:center;gap:8px;margin-top:9px}.qty button{width:36px;height:36px;border:0;border-radius:9px;font-size:20px}.qty span{min-width:25px;text-align:center}
+.total{display:flex;justify-content:space-between;font-size:20px;font-weight:bold;padding-top:12px;border-top:1px solid #eee}
+nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #ddd;display:grid;grid-template-columns:repeat(5,1fr);z-index:10;padding-bottom:env(safe-area-inset-bottom)}
+nav button{background:none;border:0;padding:10px 2px 8px;font-size:11px;color:#68716c}nav button.active{color:var(--p);font-weight:bold}.icon{font-size:21px;display:block;margin-bottom:3px}
+.toast{position:fixed;left:50%;bottom:92px;transform:translateX(-50%);background:#222;color:#fff;padding:11px 16px;border-radius:10px;display:none;z-index:20;max-width:90%;text-align:center}
+.scanner-btn{min-width:52px;font-size:22px;padding:10px}.scanner-overlay{display:none;position:fixed;inset:0;background:#000;z-index:1000;flex-direction:column}.scanner-overlay.active{display:flex}.scanner-head{display:flex;justify-content:space-between;align-items:center;color:#fff;padding:14px 16px;background:#111}.scanner-head button{border:0;background:#fff;border-radius:10px;padding:10px 14px;font-weight:bold}#scannerReader{width:100%;max-width:650px;margin:auto}.scanner-note{color:#fff;text-align:center;padding:14px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stat{text-align:center}.stat b{display:block;font-size:20px;color:var(--p)}.empty{text-align:center;color:var(--muted);padding:22px}
+</style>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+</head>
+<body>
+<header><h1>BID ELBARAKA</h1><small>Gestion des ventes et du stock</small></header>
+<main>
+<section id="vente" class="page active">
+ <h2>Nouvelle vente</h2>
+ <div class="card"><div class="search"><input id="saleBarcode" inputmode="numeric" placeholder="Scanner / saisir le barcode" oninput="lookupSaleProduct()"><button class="btn secondary scanner-btn" onclick="openScanner('saleBarcode','lookupSale')">📷</button></div><label>Nom produit</label><input id="saleProductName" readonly placeholder="Nom du produit"><div class="row"><div><label>Prix de vente</label><input id="salePrice" readonly placeholder="0.00 DH"></div><div><label>Quantité</label><input id="saleQty" type="number" min="1" value="1"></div></div><button class="btn primary" style="width:100%;margin-top:12px" onclick="addSale()">Ajouter au panier</button></div>
+ <div class="card"><div id="cart"></div><div class="total"><span>Total</span><span id="cartTotal">0.00 DH</span></div>
+ <label>Nombre client</label><input id="nombreClient" type="number" min="1" value="1">
+ <button class="btn primary" style="width:100%;margin-top:12px" onclick="checkout()">VALIDER LA VENTE</button></div>
+</section>
+
+<section id="produits" class="page"><h2>Produits</h2>
+ <div class="card">
+  <label>Barcode</label><div class="search"><input id="pBarcode" inputmode="numeric"><button class="btn secondary scanner-btn" onclick="openScanner('pBarcode','input')">📷</button></div>
+  <label>Nom produit</label><input id="pNom">
+  <div class="row"><div><label>Prix d'achat</label><input id="pAchat" type="number" step="0.01"></div><div><label>Prix vente</label><input id="pVente" type="number" step="0.01"></div></div>
+  <label>Stock initial</label><input id="pStock" type="number" step="1">
+  <button class="btn primary" style="width:100%;margin-top:12px" onclick="addProduct()">Ajouter produit</button>
+ </div>
+ <div class="card"><div class="search"><input id="productSearch" placeholder="Rechercher..." oninput="renderProducts()"><button class="btn secondary" onclick="loadProducts()">Actualiser</button></div><div id="productsList"></div></div>
+</section>
+
+<section id="stock" class="page"><h2>Stock</h2>
+ <div class="stats"><div class="card stat"><b id="sProducts">0</b><small>Produits</small></div><div class="card stat"><b id="sQty">0</b><small>Quantité</small></div><div class="card stat"><b id="sValue">0</b><small>Valeur DH</small></div></div>
+ <div class="card"><div id="stockList"></div></div>
+</section>
+
+<section id="reception" class="page"><h2>Réception</h2>
+ <div class="card"><div class="search"><input id="rBarcode" inputmode="numeric" placeholder="Barcode"><button class="btn secondary scanner-btn" onclick="openScanner('rBarcode','reception')">📷</button><button class="btn primary" onclick="findReception()">Chercher</button></div>
+ <div id="receptionProduct"></div></div>
+ <div class="card"><div id="receptionCart"></div><button class="btn primary" style="width:100%" onclick="saveReception()">VALIDER LA RÉCEPTION</button></div>
+</section>
+
+<section id="historique" class="page"><h2>Historique des ventes</h2>
+ <div class="card"><button class="btn secondary" onclick="loadSales()">Actualiser</button><div id="salesList"></div></div>
+</section>
+</main>
+<nav>
+<button class="active" onclick="showPage('vente',this)"><span class="icon">🛒</span>Vente</button>
+<button onclick="showPage('produits',this)"><span class="icon">📦</span>Produits</button>
+<button onclick="showPage('stock',this)"><span class="icon">📊</span>Stock</button>
+<button onclick="showPage('reception',this)"><span class="icon">🚚</span>Réception</button>
+<button onclick="showPage('historique',this)"><span class="icon">🧾</span>Ventes</button>
+</nav><div class="toast" id="toast"></div><div id="scannerOverlay" class="scanner-overlay"><div class="scanner-head"><strong>Scanner le code-barres</strong><button onclick="closeScanner()">Fermer ✕</button></div><div id="scannerReader"></div><div class="scanner-note">Placez le code-barres dans le cadre</div></div>
+<script>
+const API_URL="https://script.google.com/macros/s/AKfycbza60jqlxobGC9b-9qxNAwNsC2NcYRBauQB6Qn1zhdu7RS47jg__5O7Pcx-LW80qPPBWA/exec";
+let products=[],cart=[],receptionCart=[];
+
+let html5QrCode=null,scannerTarget="",scannerMode="",scannerBusy=false;
+async function openScanner(targetId,mode){scannerTarget=targetId;scannerMode=mode;scannerBusy=false;document.getElementById("scannerOverlay").classList.add("active");try{if(typeof Html5Qrcode==="undefined")throw new Error("Bibliothèque scanner non chargée");html5QrCode=new Html5Qrcode("scannerReader");await html5QrCode.start({facingMode:"environment"},{fps:15,qrbox:{width:280,height:140},aspectRatio:1.5,formatsToSupport:[Html5QrcodeSupportedFormats.EAN_13,Html5QrcodeSupportedFormats.EAN_8,Html5QrcodeSupportedFormats.UPC_A,Html5QrcodeSupportedFormats.UPC_E,Html5QrcodeSupportedFormats.CODE_128,Html5QrcodeSupportedFormats.CODE_39]},async text=>{if(scannerBusy)return;scannerBusy=true;document.getElementById(scannerTarget).value=text;await closeScanner();if(scannerMode==="sale")await addSale();else if(scannerMode==="reception")await findReception();else if(scannerMode==="lookupSale")await lookupSaleProduct()},()=>{})}catch(e){toast("Scanner: "+e.message);await closeScanner()}}
+async function closeScanner(){try{if(html5QrCode){if(html5QrCode.isScanning)await html5QrCode.stop();html5QrCode.clear()}}catch(e){}html5QrCode=null;document.getElementById("scannerOverlay").classList.remove("active")}
+document.addEventListener("visibilitychange",()=>{if(document.hidden)closeScanner()});window.addEventListener("pagehide",closeScanner);
+function toast(m){let t=document.getElementById('toast');t.textContent=m;t.style.display='block';setTimeout(()=>t.style.display='none',2500)}
+function showPage(id,b){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');if(id==='stock')renderStock();if(id==='historique')loadSales()}
+async function apiGet(action,params={}){let u=new URL(API_URL);u.searchParams.set('action',action);Object.entries(params).forEach(([k,v])=>u.searchParams.set(k,v));let r=await fetch(u);return r.json()}
+async function apiPost(data) {
+  const response = await fetch(API_URL, {
+    method: "POST",
+    body: JSON.stringify(data)
+  });
+
+  return await response.json();
+}
+async function loadProducts(){try{let d=await apiGet('getProduits');if(!d.success)throw Error(d.message);products=d.produits||[];renderProducts();renderStock()}catch(e){toast('Erreur: '+e.message)}}
+function renderProducts(){let q=(document.getElementById('productSearch').value||'').toLowerCase();let a=products.filter(p=>p.nom_produit.toLowerCase().includes(q)||p.barcode.includes(q));document.getElementById('productsList').innerHTML=a.length?a.map(p=>`<div class="item"><div class="item-top"><span>${esc(p.nom_produit)}</span><span>${p.prix_vente.toFixed(2)} DH</span></div><div class="meta">${esc(p.barcode)} • Stock: ${p.stock} • Marge: ${p.marge.toFixed(2)} DH</div></div>`).join(''):'<div class="empty">Aucun produit</div>'}
+function renderStock(){document.getElementById('sProducts').textContent=products.length;document.getElementById('sQty').textContent=products.reduce((s,p)=>s+p.stock,0);document.getElementById('sValue').textContent=products.reduce((s,p)=>s+p.valeur_stock,0).toFixed(2);document.getElementById('stockList').innerHTML=products.length?products.map(p=>`<div class="item"><div class="item-top"><span>${esc(p.nom_produit)}</span><span>${p.stock}</span></div><div class="meta">Valeur stock: ${p.valeur_stock.toFixed(2)} DH</div></div>`).join(''):'<div class="empty">Aucun produit</div>'}
+async function addProduct(){let d={action:'addProduit',barcode:pBarcode.value.trim(),nom_produit:pNom.value.trim(),prix_achat:+pAchat.value,prix_vente:+pVente.value,stock:+pStock.value};if(!d.barcode||!d.nom_produit)return toast('Remplissez le barcode et le nom');try{let r=await apiPost(d);if(!r.success)throw Error(r.message);['pBarcode','pNom','pAchat','pVente','pStock'].forEach(x=>document.getElementById(x).value='');toast(r.message);loadProducts()}catch(e){toast('Erreur: '+e.message)}}
+let saleLookupTimer=null;
+let lastFoundSaleBarcode='';
+function lookupSaleProduct(){
+ clearTimeout(saleLookupTimer);
+ saleLookupTimer=setTimeout(async()=>{
+  const b=saleBarcode.value.trim();
+  if(!b){saleProductName.value='';salePrice.value='';lastFoundSaleBarcode='';return}
+  let p=products.find(x=>String(x.barcode).trim()===b);
+  if(!p){try{let d=await apiGet('getProduit',{barcode:b});if(d.success)p=d.produit}catch(e){}}
+  if(p){
+   saleProductName.value=p.nom_produit;
+   salePrice.value=Number(p.prix_vente).toFixed(2)+' DH';
+   lastFoundSaleBarcode=b;
+  }
+  // إذا لم نجد منتجاً أثناء الكتابة، نحتفظ بالمعلومات السابقة ولا نمسحها.
+ },400);
+}
+async function addSale(){let b=saleBarcode.value.trim(),q=Number(saleQty.value)||1;if(!b)return toast('Saisissez le barcode');if(q<=0)return toast('Quantité invalide');let p=products.find(x=>x.barcode===b);if(!p){try{let d=await apiGet('getProduit',{barcode:b});if(!d.success)throw Error(d.message);p=d.produit}catch(e){return toast(e.message)}}let x=cart.find(i=>i.barcode===b),current=x?x.quantite:0;if(current+q>p.stock)return toast('Stock insuffisant');if(x)x.quantite+=q;else cart.push({...p,quantite:q});saleBarcode.value='';saleProductName.value='';salePrice.value='';saleQty.value='1';renderCart()}
+function changeQty(b,n){let x=cart.find(i=>i.barcode===b);if(!x)return;x.quantite+=n;if(x.quantite<=0)cart=cart.filter(i=>i.barcode!==b);else if(x.quantite>x.stock){x.quantite=x.stock;toast('Stock maximum atteint')}renderCart()}
+function renderCart(){cartEl=document.getElementById('cart');cartEl.innerHTML=cart.length?cart.map(x=>`<div class="item"><div class="item-top"><span>${esc(x.nom_produit)}</span><span>${(x.prix_vente*x.quantite).toFixed(2)} DH</span></div><div class="qty"><button onclick="changeQty('${x.barcode}',-1)">−</button><span>${x.quantite}</span><button onclick="changeQty('${x.barcode}',1)">+</button></div></div>`).join(''):'<div class="empty">Panier vide</div>';cartTotal.textContent=cart.reduce((s,x)=>s+x.prix_vente*x.quantite,0).toFixed(2)+' DH'}
+async function checkout(){if(!cart.length)return toast('Panier vide');try{let r=await apiPost({action:'vente',nombre_client:+nombreClient.value||1,produits:cart.map(x=>({barcode:x.barcode,quantite:x.quantite}))});if(!r.success)throw Error(r.message);toast('Vente N° '+r.facture+' enregistrée');cart=[];renderCart();await loadProducts()}catch(e){toast('Erreur: '+e.message)}}
+async function findReception(){let b=rBarcode.value.trim();let p=products.find(x=>x.barcode===b);if(!p)return toast('Produit introuvable');receptionProduct.innerHTML=`<div class="item"><b>${esc(p.nom_produit)}</b><label>Nouveau prix d'achat</label><input id="rPrix" type="number" step=".01" value="${p.prix_achat}"><label>Quantité reçue</label><input id="rQty" type="number" value="1"><button class="btn primary" style="width:100%;margin-top:10px" onclick="addReception('${p.barcode}')">Ajouter</button></div>`}
+function addReception(b){let p=products.find(x=>x.barcode===b),q=+rQty.value,pa=+rPrix.value;if(q<=0)return toast('Quantité invalide');let x=receptionCart.find(i=>i.barcode===b);if(x){x.quantite+=q;x.prix_achat=pa}else receptionCart.push({barcode:b,nom_produit:p.nom_produit,quantite:q,prix_achat:pa});rBarcode.value='';receptionProduct.innerHTML='';renderReception()}
+function renderReception(){receptionCart.innerHTML;document.getElementById('receptionCart').innerHTML=receptionCart.length?receptionCart.map(x=>`<div class="item"><div class="item-top"><span>${esc(x.nom_produit)}</span><span>${x.quantite} × ${x.prix_achat.toFixed(2)} DH</span></div></div>`).join(''):'<div class="empty">Aucun produit</div>'}
+async function saveReception(){if(!receptionCart.length)return toast('Aucun produit');try{let r=await apiPost({action:'reception',produits:receptionCart.map(x=>({barcode:x.barcode,quantite:x.quantite,prix_achat:x.prix_achat}))});if(!r.success)throw Error(r.message);toast('Réception N° '+r.numero_commande+' enregistrée');receptionCart=[];renderReception();loadProducts()}catch(e){toast('Erreur: '+e.message)}}
+async function loadSales(){try{let d=await apiGet('getVentes');let a=(d.ventes||[]).slice().reverse();salesList.innerHTML=a.length?a.slice(0,100).map(r=>`<div class="item"><div class="item-top"><span>Facture ${esc(String(r[0]))}</span><span>${Number(r[8]||0).toFixed(2)} DH</span></div><div class="meta">${esc(String(r[3]||''))} • Qté ${r[6]} • Gain ${Number(r[9]||0).toFixed(2)} DH</div></div>`).join(''):'<div class="empty">Aucune vente</div>'}catch(e){toast('Erreur: '+e.message)}}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+renderCart();renderReception();loadProducts();
+</script></body></html>

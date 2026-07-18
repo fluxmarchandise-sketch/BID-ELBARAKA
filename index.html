@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="fr" dir="ltr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>BID ELBARAKA - Vente</title>
+<style>
+:root{--p:#126b45;--bg:#f4f7f5;--card:#fff;--text:#17211c;--muted:#6d7771;--danger:#c62828}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text);padding-bottom:82px}
+header{background:var(--p);color:#fff;padding:18px 16px 14px;position:sticky;top:0;z-index:5}header h1{font-size:20px;margin:0}header small{opacity:.85}.header-content{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.header-datetime{text-align:right;font-size:12px;font-weight:bold;line-height:1.5;white-space:nowrap}.header-datetime .time{font-size:16px}
+main{max-width:720px;margin:auto;padding:14px}.page{display:none}.page.active{display:block}
+.card{background:var(--card);border-radius:16px;padding:14px;margin-bottom:12px;box-shadow:0 2px 12px #0000000d}
+h2{font-size:19px;margin:4px 0 14px}label{font-size:12px;color:var(--muted);display:block;margin:9px 0 5px}
+input{width:100%;padding:13px;border:1px solid #d9dfdb;border-radius:11px;font-size:16px;background:#fff}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.btn{border:0;border-radius:11px;padding:13px 14px;font-weight:bold;font-size:14px;cursor:pointer}
+.primary{background:var(--p);color:#fff}.secondary{background:#e7efe9;color:var(--p)}.danger{background:#ffebee;color:var(--danger)}
+.search{display:flex;gap:8px}.search input{flex:1}.search .btn{white-space:nowrap}
+.item{border-bottom:1px solid #eee;padding:11px 0}.item:last-child{border:0}.item-top{display:flex;justify-content:space-between;gap:8px;font-weight:bold}
+.meta{font-size:13px;color:var(--muted);margin-top:5px}.qty{display:flex;align-items:center;gap:8px;margin-top:9px}.qty button{width:36px;height:36px;border:0;border-radius:9px;font-size:20px}.qty span{min-width:25px;text-align:center}
+.total{display:flex;justify-content:space-between;font-size:20px;font-weight:bold;padding-top:12px;border-top:1px solid #eee}
+nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #ddd;display:grid;grid-template-columns:repeat(5,1fr);z-index:10;padding-bottom:env(safe-area-inset-bottom)}
+nav button{background:none;border:0;padding:10px 2px 8px;font-size:11px;color:#68716c}nav button.active{color:var(--p);font-weight:bold}.icon{font-size:21px;display:block;margin-bottom:3px}
+.toast{position:fixed;left:50%;bottom:92px;transform:translateX(-50%);background:#222;color:#fff;padding:11px 16px;border-radius:10px;display:none;z-index:20;max-width:90%;text-align:center}
+.scanner-btn{min-width:52px;font-size:22px;padding:10px}.scanner-overlay{display:none;position:fixed;inset:0;background:#000;z-index:1000;flex-direction:column}.scanner-overlay.active{display:flex}.scanner-head{display:flex;justify-content:space-between;align-items:center;color:#fff;padding:14px 16px;background:#111}.scanner-head button{border:0;background:#fff;border-radius:10px;padding:10px 14px;font-weight:bold}#scannerReader{width:100%;max-width:650px;margin:auto}.scanner-note{color:#fff;text-align:center;padding:14px}.pin-overlay{display:none;position:fixed;inset:0;background:#0008;z-index:2000;align-items:center;justify-content:center;padding:20px}.pin-overlay.active{display:flex}.pin-box{background:#fff;width:100%;max-width:340px;border-radius:18px;padding:20px;text-align:center}.pin-box input{text-align:center;font-size:24px;letter-spacing:8px}.pin-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stat{text-align:center}.stat b{display:block;font-size:20px;color:var(--p)}.empty{text-align:center;color:var(--muted);padding:22px}
+
+#vente .sale-card{border:1px solid #e7ece9;box-shadow:0 8px 28px #123b2812}
+#vente .sale-title{font-size:13px;font-weight:800;color:var(--p);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
+#vente .sale-product-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+#vente .sale-product-row input{text-align:center;padding-left:4px;padding-right:4px;font-weight:700}
+#vente .sale-total{margin-top:14px;background:#eef7f2;border:0;border-radius:14px;padding:15px 16px;color:var(--p)}
+#vente .payment-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+#vente .payment-box{background:#f8faf9;border:1px solid #e3e9e5;border-radius:14px;padding:9px}
+#vente .payment-box label{margin-top:0;font-weight:700}
+#vente .payment-box input{text-align:center;font-size:18px;font-weight:800}
+#vente #changeAmount{background:#eef7f2;color:var(--p)}
+#vente .checkout-btn{width:100%;margin-top:10px;padding:16px;font-size:16px}
+@media(max-width:390px){#vente .sale-product-row{gap:4px}#vente .sale-product-row input{font-size:13px;padding:12px 2px}#vente .payment-grid{gap:5px}#vente .payment-box{padding:7px}}
+</style>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+</head>
+<body>
+<header><div class="header-content"><div><h1>BID ELBARAKA</h1><small>Gestion des ventes et du stock</small></div><div class="header-datetime"><div id="currentDate"></div><div id="currentTime" class="time"></div></div></div></header>
+<main>
+<section id="vente" class="page active">
+ <h2>Nouvelle vente</h2>
+ <div class="card sale-card">
+  <div class="sale-title">Ajouter un produit</div>
+  <label>Barcode</label>
+  <div class="search"><input id="saleBarcode" inputmode="numeric" placeholder="Scanner / saisir le barcode" oninput="lookupSaleProduct()"><button class="btn secondary scanner-btn" onclick="openScanner('saleBarcode','lookupSale')">SCANNER</button></div>
+  <label>Nom produit</label><input id="saleProductName" readonly placeholder="Nom du produit">
+  <div class="sale-product-row">
+   <div><label>Stock</label><input id="saleStock" readonly placeholder="0"></div>
+   <div><label>PRIX</label><input id="salePrice" readonly placeholder="0.00 DH"></div>
+   <div><label>Quantité</label><input id="saleQty" type="number" min="1" inputmode="numeric" value="1" onfocus="if(this.value==='1')this.value=''" onblur="if(this.value==='')this.value='1'"></div>
+  </div>
+  <label>MONTANT</label>
+  <input id="saleAmountForQty" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Entrer un montant" oninput="calculateQtyFromAmount()">
+  <button class="btn primary" style="width:100%;margin-top:12px" onclick="addSale()">AJOUTER AU PANIER</button>
+  <div class="total sale-total"><span>TOTAL</span><span id="cartTotal">0.00 DH</span></div>
+  <div class="payment-grid">
+   <div class="payment-box"><label>Montant reçu</label><input id="amountReceived" type="number" min="0" step=".01" inputmode="decimal" placeholder="0.00" oninput="updateChange()"></div>
+   <div class="payment-box"><label>Monnaie à rendre</label><input id="changeAmount" value="0.00 DH" readonly tabindex="-1"></div>
+  </div>
+  <button class="btn primary checkout-btn" onclick="checkout()">VALIDER LA VENTE</button>
+  <div style="display:none"><input id="nombreClient" type="number" value="1"></div>
+ </div>
+ <div class="card sale-card"><div class="sale-title">Panier</div><div id="cart"></div></div>
+</section>
+
+<section id="produits" class="page"><h2>Produits</h2>
+ <div class="card">
+  <label>Barcode</label><div class="search"><input id="pBarcode" inputmode="numeric"><button class="btn secondary scanner-btn" onclick="openScanner('pBarcode','input')">📷</button></div>
+  <label>Nom produit</label><input id="pNom">
+  <div class="row"><div><label>Prix d'achat</label><input id="pAchat" type="number" step="0.01"></div><div><label>Prix vente</label><input id="pVente" type="number" step="0.01"></div></div>
+  <label>Stock initial</label><input id="pStock" type="number" step="1">
+  <button class="btn primary" style="width:100%;margin-top:12px" onclick="addProduct()">Ajouter produit</button>
+ </div>
+ <div class="card"><div class="search"><input id="productSearch" placeholder="Rechercher..." oninput="renderProducts()"><button class="btn secondary" onclick="loadProducts()">Actualiser</button></div><div id="productsList"></div></div>
+</section>
+
+<section id="stock" class="page"><h2>Stock</h2>
+ <div class="stats"><div class="card stat"><b id="sProducts">0</b><small>Produits</small></div><div class="card stat"><b id="sQty">0</b><small>Quantité</small></div><div class="card stat"><b id="sValue">0</b><small>Valeur DH</small></div></div>
+ <div class="card"><div id="stockList"></div></div>
+</section>
+
+<section id="reception" class="page"><h2>Réception</h2>
+ <div class="card"><div class="search"><input id="rBarcode" inputmode="numeric" placeholder="Barcode"><button class="btn secondary scanner-btn" onclick="openScanner('rBarcode','reception')">📷</button><button class="btn primary" onclick="findReception()">Chercher</button></div>
+ <div id="receptionProduct"></div></div>
+ <div class="card"><div id="receptionCart"></div><button class="btn primary" style="width:100%" onclick="saveReception()">VALIDER LA RÉCEPTION</button></div>
+</section>
+
+<section id="historique" class="page"><h2>Historique des ventes</h2>
+ <div class="card"><button class="btn secondary" onclick="loadSales()">Actualiser</button><div id="salesList"></div></div>
+</section>
+</main>
+<nav>
+<button class="active" onclick="showPage('vente',this)"><span class="icon">🛒</span>Vente</button>
+<button onclick="showPage('produits',this)"><span class="icon">📦</span>Produits</button>
+<button onclick="showPage('stock',this)"><span class="icon">📊</span>Stock</button>
+<button onclick="showPage('reception',this)"><span class="icon">🚚</span>Réception</button>
+<button onclick="showPage('historique',this)"><span class="icon">🧾</span>Ventes</button>
+</nav><div class="toast" id="toast"></div><div id="pinOverlay" class="pin-overlay"><div class="pin-box"><h3>Accès protégé</h3><p>Entrez le code PIN du propriétaire</p><input id="pinInput" type="password" inputmode="numeric" maxlength="8" placeholder="••••"><div class="pin-actions"><button class="btn secondary" onclick="cancelPin()">Annuler</button><button class="btn primary" onclick="validatePin()">Valider</button></div></div></div><div id="scannerOverlay" class="scanner-overlay"><div class="scanner-head"><strong>Scanner le code-barres</strong><button onclick="closeScanner()">Fermer ✕</button></div><div id="scannerReader"></div><div class="scanner-note">Placez le code-barres dans le cadre</div></div>
+<script>
+const API_URL="https://script.google.com/macros/s/AKfycbza60jqlxobGC9b-9qxNAwNsC2NcYRBauQB6Qn1zhdu7RS47jg__5O7Pcx-LW80qPPBWA/exec";
+let products=[],cart=[],receptionCart=[];
+
+let html5QrCode=null,scannerTarget="",scannerMode="",scannerBusy=false;
+
+async function openScanner(targetId,mode){
+ scannerTarget=targetId;
+ scannerMode=mode;
+ scannerBusy=false;
+ const overlay=document.getElementById("scannerOverlay");
+ overlay.classList.add("active");
+ await new Promise(r=>setTimeout(r,150));
+
+ try{
+  if(typeof Html5Qrcode==="undefined"){
+   throw new Error("Bibliothèque scanner non chargée");
+  }
+
+  if(html5QrCode){
+   try{if(html5QrCode.isScanning)await html5QrCode.stop()}catch(_){}
+   try{html5QrCode.clear()}catch(_){}
+  }
+
+  html5QrCode=new Html5Qrcode("scannerReader");
+
+  const config={
+   fps:30,
+   qrbox:(viewfinderWidth,viewfinderHeight)=>{
+    const width=Math.floor(viewfinderWidth*0.92);
+    const height=Math.min(Math.floor(viewfinderHeight*0.38),180);
+    return {width:Math.max(width,220),height:Math.max(height,100)};
+   },
+   aspectRatio:1.777778,
+   disableFlip:false,
+   experimentalFeatures:{useBarCodeDetectorIfSupported:true},
+   formatsToSupport:[
+    Html5QrcodeSupportedFormats.EAN_13,
+    Html5QrcodeSupportedFormats.EAN_8,
+    Html5QrcodeSupportedFormats.UPC_A,
+    Html5QrcodeSupportedFormats.UPC_E,
+    Html5QrcodeSupportedFormats.CODE_128
+   ]
+  };
+
+  const onSuccess=async(decodedText)=>{
+   if(scannerBusy)return;
+   scannerBusy=true;
+
+   let code=String(decodedText||"").trim();
+   if(!code){scannerBusy=false;return;}
+
+   const input=document.getElementById(scannerTarget);
+   if(input){
+    input.value=code;
+    input.dispatchEvent(new Event("input",{bubbles:true}));
+    input.style.backgroundColor="#c6f6d5";
+    input.style.borderColor="#9ae6b4";
+    setTimeout(()=>{
+     input.style.backgroundColor="";
+     input.style.borderColor="";
+    },1000);
+   }
+
+   const mode=scannerMode;
+   await closeScanner();
+
+   if(mode==="sale")await addSale();
+   else if(mode==="reception")await findReception();
+   else if(mode==="lookupSale")await lookupSaleProduct();
+  };
+
+  try{
+   await html5QrCode.start(
+    {
+     facingMode:"environment",
+     advanced:[
+      {focusMode:"continuous"},
+      {zoom:2}
+     ]
+    },
+    config,
+    onSuccess,
+    ()=>{}
+   );
+  }catch(firstError){
+   const cameras=await Html5Qrcode.getCameras();
+   if(!cameras||!cameras.length)throw firstError||new Error("Aucune caméra disponible");
+   const backCamera=cameras.find(c=>/back|rear|environment|arrière/i.test(c.label))||cameras[cameras.length-1];
+   await html5QrCode.start(
+    backCamera.id,
+    config,
+    onSuccess,
+    ()=>{}
+   );
+  }
+
+  // تحسين قراءة الباركود الصغير إذا كانت الكاميرا تدعم التركيز والـ Zoom
+  try{
+   const capabilities=html5QrCode.getRunningTrackCapabilities
+    ? html5QrCode.getRunningTrackCapabilities()
+    : {};
+   const settings={};
+
+   if(capabilities.focusMode&&capabilities.focusMode.includes("continuous")){
+    settings.focusMode="continuous";
+   }
+
+   if(capabilities.zoom){
+    const min=Number(capabilities.zoom.min)||1;
+    const max=Number(capabilities.zoom.max)||1;
+    settings.zoom=Math.min(max,Math.max(min,2));
+   }
+
+   if(Object.keys(settings).length&&html5QrCode.applyVideoConstraints){
+    await html5QrCode.applyVideoConstraints({advanced:[settings]});
+   }
+  }catch(_){}
+
+ }catch(e){
+  console.error("Scanner error:",e);
+  const msg=(e&&e.message)?e.message:String(e||"Impossible de démarrer la caméra");
+  toast("Scanner: "+msg);
+  await closeScanner();
+ }
+}
+async function closeScanner(){
+ try{if(html5QrCode&&html5QrCode.isScanning)await html5QrCode.stop()}catch(e){}
+ try{if(html5QrCode)html5QrCode.clear()}catch(e){}
+ html5QrCode=null;
+ const overlay=document.getElementById("scannerOverlay");
+ if(overlay)overlay.classList.remove("active");
+ scannerBusy=false;
+}
+
+document.addEventListener("visibilitychange",()=>{if(document.hidden)closeScanner()});
+window.addEventListener("pagehide",closeScanner);
+function toast(m){let t=document.getElementById('toast');t.textContent=m;t.style.display='block';setTimeout(()=>t.style.display='none',2500)}
+const OWNER_PIN="1234",PROTECTED_PAGES=["produits","stock","reception","historique"];let pendingPage=null,pendingButton=null;
+function showPage(id,b){if(id!=='historique')closeAllInvoices();if(PROTECTED_PAGES.includes(id)){pendingPage=id;pendingButton=b;pinInput.value='';pinOverlay.classList.add('active');setTimeout(()=>pinInput.focus(),100);return}openPage(id,b)}
+function openPage(id,b){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');if(id==='stock')renderStock();if(id==='historique')loadSales()}
+function validatePin(){if(pinInput.value!==OWNER_PIN){pinInput.value='';toast('Code PIN incorrect');return}pinOverlay.classList.remove('active');if(pendingPage&&pendingButton)openPage(pendingPage,pendingButton);pendingPage=null;pendingButton=null}
+function cancelPin(){pinOverlay.classList.remove('active');pinInput.value='';pendingPage=null;pendingButton=null}
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&pinOverlay.classList.contains('active'))validatePin()});
+async function apiGet(action,params={}){let u=new URL(API_URL);u.searchParams.set('action',action);Object.entries(params).forEach(([k,v])=>u.searchParams.set(k,v));let r=await fetch(u);return r.json()}
+async function apiPost(data) {
+  const response = await fetch(API_URL, {
+    method: "POST",
+    body: JSON.stringify(data)
+  });
+
+  return await response.json();
+}
+async function loadProducts(){try{let d=await apiGet('getProduits');if(!d.success)throw Error(d.message);products=d.produits||[];renderProducts();renderStock()}catch(e){toast('Erreur: '+e.message)}}
+function renderProducts(){let q=(document.getElementById('productSearch').value||'').toLowerCase();let a=products.filter(p=>p.nom_produit.toLowerCase().includes(q)||p.barcode.includes(q));document.getElementById('productsList').innerHTML=a.length?a.map(p=>`<div class="item"><div class="item-top"><span>${esc(p.nom_produit)}</span><span>${p.prix_vente.toFixed(2)} DH</span></div><div class="meta">${esc(p.barcode)} • Stock: ${p.stock} • Marge: ${p.marge.toFixed(2)} DH</div></div>`).join(''):'<div class="empty">Aucun produit</div>'}
+function renderStock(){document.getElementById('sProducts').textContent=products.length;document.getElementById('sQty').textContent=products.reduce((s,p)=>s+p.stock,0);document.getElementById('sValue').textContent=products.reduce((s,p)=>s+p.valeur_stock,0).toFixed(2);document.getElementById('stockList').innerHTML=products.length?products.map(p=>`<div class="item"><div class="item-top"><span>${esc(p.nom_produit)}</span><span>${p.stock}</span></div><div class="meta">Valeur stock: ${p.valeur_stock.toFixed(2)} DH</div></div>`).join(''):'<div class="empty">Aucun produit</div>'}
+function addProduct(){
+ let d={action:'addProduit',barcode:pBarcode.value.trim(),nom_produit:pNom.value.trim(),prix_achat:+pAchat.value,prix_vente:+pVente.value,stock:+pStock.value};
+ if(!d.barcode||!d.nom_produit)return toast('Remplissez le barcode et le nom');
+ if(products.some(p=>String(p.barcode)===String(d.barcode)))return toast('Ce barcode existe déjà');
+
+ const nouveauProduit={
+  barcode:String(d.barcode),
+  nom_produit:d.nom_produit,
+  prix_achat:Number(d.prix_achat)||0,
+  prix_vente:Number(d.prix_vente)||0,
+  marge:(Number(d.prix_vente)||0)-(Number(d.prix_achat)||0),
+  stock:Number(d.stock)||0,
+  valeur_stock:(Number(d.prix_achat)||0)*(Number(d.stock)||0)
+ };
+
+ // إضافة فورية محلياً بدون انتظار Apps Script
+ products.push(nouveauProduit);
+ renderProducts();
+ renderStock();
+ ['pBarcode','pNom','pAchat','pVente','pStock'].forEach(x=>document.getElementById(x).value='');
+ toast('Produit ajouté');
+
+ // الحفظ في Google Sheets في الخلفية
+ apiPost(d).then(r=>{
+  if(!r.success)throw Error(r.message);
+ }).catch(e=>{
+  // إذا فشل الحفظ نحذف النسخة المحلية حتى لا تظهر بيانات غير محفوظة
+  products=products.filter(p=>String(p.barcode)!==String(d.barcode));
+  renderProducts();
+  renderStock();
+  toast('Erreur enregistrement: '+e.message);
+ });
+}
+let saleLookupTimer=null;
+let lastFoundSaleBarcode='';
+function lookupSaleProduct(){
+ clearTimeout(saleLookupTimer);
+ saleLookupTimer=setTimeout(async()=>{
+  const b=saleBarcode.value.trim();
+  if(!b){saleProductName.value='';salePrice.value='';saleStock.value='';lastFoundSaleBarcode='';return}
+  let p=products.find(x=>String(x.barcode).trim()===b);
+  if(!p){try{let d=await apiGet('getProduit',{barcode:b});if(d.success)p=d.produit}catch(e){}}
+  if(p){
+   saleProductName.value=p.nom_produit;
+   salePrice.value=Number(p.prix_vente).toFixed(2)+' DH';
+   saleStock.value=Number(p.stock)||0;
+   lastFoundSaleBarcode=b;
+  }
+  // إذا لم نجد منتجاً أثناء الكتابة، نحتفظ بالمعلومات السابقة ولا نمسحها.
+ },400);
+}
+async function addSale(){let b=saleBarcode.value.trim(),q=Number(saleQty.value)||1;if(!b)return toast('Saisissez le barcode');if(q<=0)return toast('Quantité invalide');let p=products.find(x=>x.barcode===b);if(!p){try{let d=await apiGet('getProduit',{barcode:b});if(!d.success)throw Error(d.message);p=d.produit}catch(e){return toast(e.message)}}let x=cart.find(i=>i.barcode===b),current=x?x.quantite:0;if(current+q>p.stock)return toast('Stock insuffisant');if(x)x.quantite+=q;else cart.push({...p,quantite:q});saleBarcode.value='';saleProductName.value='';salePrice.value='';saleStock.value='';saleQty.value='1';const aq=document.getElementById('saleAmountForQty');if(aq)aq.value='';renderCart()}
+function changeQty(b,n){let x=cart.find(i=>i.barcode===b);if(!x)return;x.quantite+=n;if(x.quantite<=0)cart=cart.filter(i=>i.barcode!==b);else if(x.quantite>x.stock){x.quantite=x.stock;toast('Stock maximum atteint')}renderCart()}
+function calculateQtyFromAmount(){
+ const amount=Number(document.getElementById('saleAmountForQty')?.value)||0;
+ const price=Number(String(document.getElementById('salePrice')?.value||'').replace('DH','').trim())||0;
+ const qty=document.getElementById('saleQty');
+ if(amount>0&&price>0)qty.value=(amount/price).toFixed(3).replace(/\.000$/,'').replace(/(\.\d*?)0+$/,'$1');
+ else if(amount===0)qty.value='1';
+}
+function getCartTotal(){return cart.reduce((s,x)=>s+Number(x.prix_vente)*Number(x.quantite),0)}
+function updateChange(){const received=Number(document.getElementById('amountReceived')?.value)||0;const f=document.getElementById('changeAmount');if(f)f.value=Math.max(0,received-getCartTotal()).toFixed(2)+' DH'}
+function renderCart(){cartEl=document.getElementById('cart');cartEl.innerHTML=cart.length?cart.map(x=>`<div class="item"><div class="item-top"><span>${esc(x.nom_produit)}</span><span>${(x.prix_vente*x.quantite).toFixed(2)} DH</span></div><div class="qty"><button onclick="changeQty('${x.barcode}',-1)">−</button><span>${x.quantite}</span><button onclick="changeQty('${x.barcode}',1)">+</button></div></div>`).join(''):'<div class="empty">Panier vide</div>';cartTotal.textContent=getCartTotal().toFixed(2)+' DH';updateChange()}
+async function checkout() {
+  if (!cart.length) {
+    return toast('Panier vide');
+  }
+
+  // نحفظ بيانات البيع قبل إفراغ السلة
+  const soldItems = cart.map(x => ({
+    barcode: String(x.barcode),
+    quantite: Number(x.quantite)
+  }));
+
+  const nombreClientVente = +nombreClient.value || 1;
+
+  // تحديث المخزون محلياً مباشرة
+  soldItems.forEach(item => {
+    const p = products.find(
+      x => String(x.barcode) === String(item.barcode)
+    );
+
+    if (p) {
+      p.stock = Math.max(
+        0,
+        Number(p.stock) - Number(item.quantite)
+      );
+
+      p.valeur_stock =
+        Number(p.prix_achat) * Number(p.stock);
+    }
+  });
+
+  // إفراغ السلة فوراً
+  cart = [];
+  renderCart();
+
+  // إعادة الحقول للوضع الافتراضي
+  saleBarcode.value = '';
+  saleProductName.value = '';
+  salePrice.value = '';
+  saleStock.value = '';
+  saleQty.value = '1';
+  const receivedField=document.getElementById('amountReceived');
+  if(receivedField)receivedField.value='';
+  updateChange();
+
+  // التطبيق جاهز فوراً لعملية البيع التالية
+  toast('Vente en cours d’enregistrement...');
+
+  // إرسال البيع إلى Google Apps Script في الخلفية
+  apiPost({
+    action: 'vente',
+    nombre_client: nombreClientVente,
+    produits: soldItems
+  })
+  .then(r => {
+    if (!r.success) {
+      throw new Error(r.message);
+    }
+
+    toast(
+      'Vente N° ' +
+      r.facture +
+      ' enregistrée'
+    );
+
+    // تحديث البيانات لاحقاً بدون تعطيل البيع
+    setTimeout(() => {
+      loadProducts();
+    }, 1000);
+  })
+  .catch(e => {
+    toast(
+      'Erreur enregistrement: ' +
+      e.message
+    );
+
+    // إعادة تحميل المخزون الحقيقي عند حدوث خطأ
+    loadProducts();
+  });
+}
+async function findReception(){let b=rBarcode.value.trim();let p=products.find(x=>x.barcode===b);if(!p)return toast('Produit introuvable');receptionProduct.innerHTML=`<div class="item"><b>${esc(p.nom_produit)}</b><label>Nouveau prix d'achat</label><input id="rPrix" type="number" step=".01" value="${p.prix_achat}"><label>Quantité reçue</label><input id="rQty" type="number" value="1"><button class="btn primary" style="width:100%;margin-top:10px" onclick="addReception('${p.barcode}')">Ajouter</button></div>`}
+function addReception(b){let p=products.find(x=>x.barcode===b),q=+rQty.value,pa=+rPrix.value;if(q<=0)return toast('Quantité invalide');let x=receptionCart.find(i=>i.barcode===b);if(x){x.quantite+=q;x.prix_achat=pa}else receptionCart.push({barcode:b,nom_produit:p.nom_produit,quantite:q,prix_achat:pa});rBarcode.value='';receptionProduct.innerHTML='';renderReception()}
+function renderReception(){receptionCart.innerHTML;document.getElementById('receptionCart').innerHTML=receptionCart.length?receptionCart.map(x=>`<div class="item"><div class="item-top"><span>${esc(x.nom_produit)}</span><span>${x.quantite} × ${x.prix_achat.toFixed(2)} DH</span></div></div>`).join(''):'<div class="empty">Aucun produit</div>'}
+async function saveReception(){if(!receptionCart.length)return toast('Aucun produit');try{let r=await apiPost({action:'reception',produits:receptionCart.map(x=>({barcode:x.barcode,quantite:x.quantite,prix_achat:x.prix_achat}))});if(!r.success)throw Error(r.message);toast('Réception N° '+r.numero_commande+' enregistrée');receptionCart=[];renderReception();loadProducts()}catch(e){toast('Erreur: '+e.message)}}
+async function loadSales(){
+ try{
+  let d=await apiGet('getVentes');
+  let rows=d.ventes||[],groups={};
+  rows.forEach(r=>{
+   let f=String(r[0]??'');
+   if(!groups[f])groups[f]={facture:f,items:[],total:0};
+   groups[f].items.push({barcode:String(r[2]||''),nom:String(r[3]||''),qte:Number(r[6]||0),total:Number(r[8]||0)});
+   groups[f].total+=Number(r[8]||0);
+  });
+  let a=Object.values(groups).reverse();
+  salesList.innerHTML=a.length?a.slice(0,100).map((g,i)=>`
+   <div class="item">
+    <div class="item-top" style="cursor:pointer" onclick="toggleInvoice(${i})">
+     <span style="color:#c62828">Facture <span style="color:#126b45">${esc(g.facture)}</span> <small>(${g.items.length} produit${g.items.length>1?'s':''})</small></span>
+     <span style="color:#126b45">TOTAL: ${g.total.toFixed(2).replace('.',',')} DH ▾</span>
+    </div>
+    <div id="invoice-${i}" class="invoice-details" style="display:none;margin-top:10px;padding-top:8px;border-top:1px dashed #ddd">
+     ${g.items.map(x=>`<div style="display:flex;justify-content:space-between;gap:10px;padding:6px 0"><span>${esc(x.barcode)} : <b>${esc(x.nom)}</b> x${x.qte}</span><b style="color:#1565c0">${x.total.toFixed(2).replace('.',',')} DH</b></div>`).join('')}
+    </div>
+   </div>`).join(''):'<div class="empty">Aucune vente</div>';
+ }catch(e){toast('Erreur: '+e.message)}
+}
+function closeAllInvoices(){document.querySelectorAll('.invoice-details').forEach(e=>e.style.display='none')}
+function toggleInvoice(i){
+ const target=document.getElementById('invoice-'+i);
+ if(!target)return;
+ const willOpen=target.style.display==='none';
+ closeAllInvoices();
+ if(willOpen)target.style.display='block';
+}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function updateDateTime(){const n=new Date(),d=document.getElementById('currentDate'),t=document.getElementById('currentTime');if(d)d.textContent=n.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'});if(t)t.textContent=n.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});}updateDateTime();setInterval(updateDateTime,1000);renderCart();renderReception();loadProducts();
+</script></body></html>
